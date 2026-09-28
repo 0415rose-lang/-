@@ -1,0 +1,1604 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>作業終了報告書 システム</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-orange: #ff6600;
+            --primary-orange-hover: #e05500;
+            --light-orange-bg: #fff3e6;
+            --header-orange: #e65c00;
+            --dark-brown: #3a2212;
+            --border-orange: #ffcc99;
+            --input-bg: #fffbf7;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #5c8bd6;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+
+        /* iPhone / iPad Safari 対応 */
+        html {
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+        body {
+            min-height: 100dvh;
+            overflow-x: hidden;
+            overscroll-behavior-y: none;
+        }
+        button, input, select, textarea {
+            font: inherit;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        button, .menu-card, .tri-state-btn {
+            touch-action: manipulation;
+        }
+
+        @media (max-width: 600px) {
+            body { font-size: 14px; }
+            .home-container { padding: 10px; width: 100%; }
+            .menu-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+            .menu-card { min-height: 92px; padding: 12px 8px; }
+            .menu-card .icon { font-size: 25px; }
+            .menu-card .title { font-size: 12px; line-height: 1.3; }
+            .menu-card .subtitle { font-size: 9px; }
+            .main-card { width: 100%; max-width: 100%; border-radius: 0; }
+            .app-header {
+                position: sticky; top: 0; z-index: 100;
+                padding: 8px; gap: 5px;
+                padding-top: calc(8px + env(safe-area-inset-top));
+            }
+            .app-header .title { font-size: 13px; min-width: 0; }
+            .header-btn-group { gap: 4px; flex-wrap: nowrap; }
+            .header-btn-group button {
+                min-height: 42px; min-width: 0; padding: 8px 9px;
+                font-size: 11px; white-space: nowrap;
+            }
+            .form-table { width: 100%; table-layout: fixed; }
+            .form-table input, .form-table select, .form-table textarea {
+                width: 100%; min-height: 40px; font-size: 16px;
+            }
+            .input-cell { padding: 5px; }
+            .label-bg { font-size: 11px; word-break: keep-all; }
+            .work-details-textarea { min-height: 180px; font-size: 16px; }
+            .sign-preview-box { height: 90px; }
+            .sign-bottom-bar { padding: 8px; gap: 8px; flex-wrap: wrap; }
+            .btn-retro { min-height: 44px; padding: 8px 18px; font-size: 13px; }
+            .modal-card {
+                width: calc(100vw - 20px); max-height: 88dvh;
+                margin: auto; border-radius: 12px;
+            }
+            .modal-body { max-height: 72dvh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+            .editor-modal { height: 100dvh; height: -webkit-fill-available; }
+            .editor-toolbar {
+                padding: 6px; gap: 5px;
+                padding-top: calc(6px + env(safe-area-inset-top));
+            }
+            .tool-group { flex-wrap: wrap; }
+            .tool-btn { min-width: 58px; min-height: 52px; height: 52px; font-size: 10px; }
+            .editor-workspace {
+                min-height: 0; padding: 8px;
+                padding-bottom: calc(8px + env(safe-area-inset-bottom));
+            }
+            .editor-canvas-container {
+                width: 100% !important; max-width: 100%;
+                height: min(52dvh, 420px) !important;
+            }
+            canvas#modal-canvas { width: 100%; height: 100%; }
+            .btn-finish-edit { min-height: 48px; padding: 9px 28px; margin-bottom: 6px; }
+        }
+
+        /* 画面切替用 */
+        .page-view {
+            display: none;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .page-view.active {
+            display: block;
+        }
+
+        /* ==========================================
+           ホーム画面（メニュー）CSS
+           ========================================== */
+        #homeView {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #4b7bd8 0%, #6891e7 100%);
+            padding: 30px 15px;
+            box-sizing: border-box;
+        }
+
+        .home-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        @media (max-width: 900px) {
+            .menu-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 600px) {
+            .menu-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        .menu-card {
+            border-radius: 12px;
+            height: 120px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            transition: transform 0.15s, box-shadow 0.15s;
+            user-select: none;
+            text-align: center;
+        }
+
+        .menu-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+
+        .menu-card:active {
+            transform: translateY(1px);
+        }
+
+        .menu-card .icon {
+            font-size: 32px;
+            margin-bottom: 6px;
+            line-height: 1;
+        }
+
+        .menu-card .title {
+            font-size: 13px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .menu-card .subtitle {
+            font-size: 10px;
+            opacity: 0.85;
+            margin-top: 3px;
+        }
+
+        /* 各カードの色定義 */
+        .card-white { background-color: #ffffff; color: #333333; }
+        .card-red { background-color: #e54d42; }
+        .card-yellow { background-color: #f3b033; }
+        .card-orange { background-color: #ff5722; }
+        .card-navy { background-color: #3b509a; }
+        .card-cyan { background-color: #4db3d4; }
+        .card-green { background-color: #42be93; }
+        .card-dark { background-color: #3a434d; }
+
+        /* 最近のファイル */
+        .recent-files-panel {
+            background: rgba(235, 243, 255, 0.95);
+            backdrop-filter: blur(5px);
+            border-radius: 12px;
+            padding: 16px 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .recent-files-title {
+            font-size: 16px;
+            font-weight: 900;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .recent-file-item {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .recent-file-item:hover { background: #f0f7ff; }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .excel-icon {
+            background-color: #1f7244;
+            color: white;
+            font-weight: 900;
+            font-size: 15px;
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .file-names { display: flex; flex-direction: column; }
+        .file-id { font-size: 11px; color: #4a7bb0; font-weight: 700; }
+        .file-title { font-size: 13px; font-weight: 700; color: #333; }
+        .file-date { font-size: 11px; color: #666; margin-right: 10px; text-align: right; line-height: 1.3; }
+
+        .btn-arrow {
+            background-color: #5c8bd6;
+            color: white;
+            border-radius: 6px;
+            width: 32px; height: 32px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 16px;
+        }
+
+        /* モーダル（一時保存一覧） */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.6);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-card {
+            background: #ffffff;
+            width: 92%;
+            max-width: 600px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            max-height: 85vh;
+        }
+        .modal-header {
+            background-color: #f3b033;
+            color: #fff;
+            padding: 14px 18px;
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-close-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .modal-body {
+            padding: 15px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .draft-item {
+            background: #fdfbf7;
+            border: 1px solid var(--border-orange);
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .draft-item:hover { background: #fff3e6; border-color: var(--primary-orange); }
+        .draft-info-main { display: flex; flex-direction: column; gap: 2px; }
+        .draft-client { font-size: 14px; font-weight: 700; color: #2b1d14; }
+        .draft-staff { font-size: 12px; color: #666; font-weight: 500; }
+        .draft-date { font-size: 10px; color: #999; }
+        .draft-actions { display: flex; gap: 6px; align-items: center; }
+        .btn-draft-load {
+            background: #0277bd; color: white; border: none;
+            padding: 6px 12px; border-radius: 5px; font-size: 12px; font-weight: bold; cursor: pointer;
+        }
+        .btn-draft-delete {
+            background: #e54d42; color: white; border: none;
+            padding: 6px 10px; border-radius: 5px; font-size: 12px; font-weight: bold; cursor: pointer;
+        }
+
+        /* ==========================================
+           フォーム画面 CSS (スマホ崩れ防止)
+           ========================================== */
+        #reportView {
+            background-color: var(--light-orange-bg);
+            padding: 15px 8px;
+            min-height: 100vh;
+        }
+
+        .main-card {
+            background: #ffffff;
+            max-width: 900px;
+            margin: 0 auto;
+            box-shadow: 0 8px 20px rgba(230, 92, 0, 0.15);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--border-orange);
+        }
+
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--header-orange);
+            color: #ffffff;
+            padding: 10px 14px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .app-header .title {
+            font-size: 14px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .header-btn-group { display: flex; gap: 6px; }
+
+        .app-header button {
+            background: var(--dark-brown);
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            font-weight: 700;
+            font-size: 11px;
+            border-radius: 5px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .app-header button.btn-home { background: #334155; }
+        .app-header button.btn-save { background: #2e7d32; }
+
+        .company-header {
+            text-align: center;
+            padding: 16px 12px;
+            border-bottom: 2px solid var(--primary-orange);
+            margin-bottom: 15px;
+            background-color: #fff9f2;
+        }
+
+        .report-title {
+            font-size: 22px;
+            font-weight: 900;
+            color: var(--header-orange);
+            margin: 0;
+            letter-spacing: 1px;
+        }
+
+        .section-header {
+            background-color: #e3effd;
+            color: #1a365d;
+            font-weight: 700;
+            padding: 8px 12px;
+            font-size: 13px;
+            border-left: 5px solid #2b6cb0;
+            margin: 16px 0 10px;
+            border-radius: 0 4px 4px 0;
+        }
+
+        /* テーブル崩れ防止設定 */
+        table.form-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            table-layout: fixed;
+            margin-bottom: 6px;
+        }
+
+        table.form-table td {
+            border: 1px solid var(--border-orange);
+            padding: 4px 6px;
+            vertical-align: middle;
+            word-break: break-word;
+        }
+
+        .label-bg {
+            background-color: #edf2f7;
+            font-weight: 700;
+            color: #2d3748;
+            width: 28%;
+            text-align: center;
+        }
+
+        .input-cell {
+            width: 72%;
+        }
+
+        /* フォーム要素 */
+        input[type="text"], input[type="date"], select, textarea {
+            width: 100%;
+            border: 1px solid var(--border-orange);
+            background-color: var(--input-bg);
+            padding: 6px 8px;
+            box-sizing: border-box;
+            font-size: 12px;
+            border-radius: 4px;
+            color: #2b1d14;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-orange);
+            background-color: #ffffff;
+        }
+
+        textarea { height: 75px; resize: vertical; }
+        .work-details-textarea { height: 160px; }
+
+        /* トグルボタン */
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+            gap: 8px;
+            margin: 8px 0;
+        }
+
+        .tri-state-btn {
+            background-color: #fff0e0;
+            border: 1px solid var(--border-orange);
+            padding: 8px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--dark-brown);
+            user-select: none;
+        }
+
+        .tri-state-btn .mark {
+            font-weight: 900;
+            font-size: 14px;
+            width: 20px;
+            height: 20px;
+            line-height: 20px;
+            text-align: center;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: inline-block;
+        }
+
+        .tri-state-btn[data-state="maru"] { background-color: #e8f5e9; border-color: #4caf50; color: #1b5e20; }
+        .tri-state-btn[data-state="maru"] .mark { color: #2e7d32; background-color: #c8e6c9; }
+        .tri-state-btn[data-state="batsu"] { background-color: #ffebee; border-color: #ef5350; color: #b71c1c; }
+        .tri-state-btn[data-state="batsu"] .mark { color: #c62828; background-color: #ffcdd2; }
+        .tri-state-btn[data-state="dash"] { background-color: #eceff1; border-color: #90a4ae; color: #37474f; }
+        .tri-state-btn[data-state="dash"] .mark { color: #455a64; background-color: #cfd8dc; }
+
+        /* サイン領域 */
+        .sign-field-container { display: flex; flex-direction: column; width: 100%; background: #fff; border: 1px solid #ccc; }
+        .sign-preview-box { height: 70px; width: 100%; display: flex; align-items: center; justify-content: center; background: #ffffff; }
+        .sign-preview-box canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+        .sign-bottom-bar { background-color: #2b3e50; padding: 6px; display: flex; align-items: center; justify-content: center; gap: 20px; }
+
+        .btn-retro {
+            background: #ffffff;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 16px;
+            font-size: 11px;
+            font-weight: bold;
+            color: #333;
+            cursor: pointer;
+        }
+
+        /* エディタモーダル */
+        .editor-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background-color: #666;
+            z-index: 9999;
+            flex-direction: column;
+        }
+
+        .editor-toolbar {
+            background-color: #dbe4f0;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #b0c2d8;
+            user-select: none;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .tool-group { display: flex; align-items: center; gap: 4px; }
+        .tool-btn {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 4px 8px; height: 48px; min-width: 55px;
+            background: #fff; border: 1px solid #a3b8d1; cursor: pointer;
+            font-size: 10px; color: #2b4263; font-weight: bold; border-radius: 4px;
+        }
+        .tool-btn.active { background-color: #4a7bb0; color: #ffffff; }
+        .tool-btn svg { width: 20px; height: 20px; margin-bottom: 2px; fill: currentColor; }
+
+        .editor-workspace { flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; overflow: auto; }
+        .btn-finish-edit { background: #ffffff; border: 2px solid #8b9eb3; border-radius: 20px; padding: 6px 24px; font-size: 14px; color: #2b4263; font-weight: 700; cursor: pointer; margin-bottom: 10px; }
+
+        .editor-canvas-container { background-color: #ffffff; box-shadow: 0 4px 10px rgba(0,0,0,0.3); position: relative; }
+        canvas#modal-canvas { display: block; cursor: crosshair; touch-action: none; -webkit-user-select: none; user-select: none; width: 100%; height: 100%; }
+
+        .palette-popup-panel { display: none; position: absolute; top: 10px; right: 10px; background: #ffffff; border: 2px solid #3b7bc4; border-radius: 8px; padding: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.25); width: 170px; z-index: 20; }
+        .palette-popup-panel.show { display: block; }
+        .palette-panel-title { font-size: 12px; font-weight: bold; color: #2b4263; border-bottom: 1px solid #ddd; padding-bottom: 4px; margin-bottom: 8px; }
+        .color-picker-grid { display: flex; gap: 6px; }
+        .color-circle { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid #ccc; box-sizing: border-box; }
+        .color-circle.active { border-color: #2b4263; transform: scale(1.15); }
+
+        @media print {
+            /* PDF印刷時の文字を高精細・くっきり表示 */
+            @page { size: A4 portrait; margin: 8mm; }
+            html, body {
+                background: #ffffff !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                text-rendering: geometricPrecision;
+            }
+            body, input, select, textarea, button, table, td, th, div, span, label {
+                font-family: Arial, "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif !important;
+                text-rendering: geometricPrecision;
+                -webkit-font-smoothing: antialiased;
+            }
+            #homeView { display: none !important; }
+            #reportView { display: block !important; padding: 0 !important; }
+            .app-header, .sign-bottom-bar, button { display: none !important; }
+            .main-card {
+                border: none !important;
+                box-shadow: none !important;
+                max-width: 100% !important;
+                width: 100% !important;
+            }
+            .editor-modal, .modal-overlay { display: none !important; }
+            input, select, textarea {
+                color: #111 !important;
+                background: #fff !important;
+            }
+            .report-title {
+                font-weight: 800 !important;
+                letter-spacing: 0.02em;
+            }
+            .section-header, .label-bg, td, th, p, span, div {
+                line-height: 1.35;
+            }
+        }
+    
+        .register-toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #16a34a;
+            color: #fff;
+            padding: 14px 24px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 16px;
+            box-shadow: 0 4px 14px rgba(0,0,0,.25);
+            z-index: 99999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s, top .2s;
+        }
+        .register-toast.show { opacity: 1; top: 35px; }
+        .register-success {
+            background: #15803d !important;
+            transform: scale(1.03);
+        }
+</style>
+</head>
+<body>
+<div id="registerToast" class="register-toast">✓ 保存済みフォルダへ登録しました</div>
+
+<!-- ホーム画面 -->
+<div id="homeView" class="page-view active">
+    <div class="home-container">
+        <div class="menu-grid">
+            <div class="menu-card card-white" onclick="navigateToReport()">
+                <div class="icon">📁</div>
+                <div class="title">作業終了報告書</div>
+            </div>
+            <div class="menu-card card-red">
+                <div class="icon">★</div>
+                <div class="title">ブックマーク</div>
+            </div>
+            <div class="menu-card card-yellow">
+                <div class="icon">📄</div>
+                <div class="title">利用者の実績</div>
+            </div>
+            <div class="menu-card card-yellow">
+                <div class="icon">🔍</div>
+                <div class="title">実績の検索</div>
+            </div>
+            <div class="menu-card card-yellow" onclick="openDraftModal()">
+                <div class="icon">📝</div>
+                <div class="title">一時保存の実績</div>
+            </div>
+            <div class="menu-card card-orange">
+                <div class="icon">💾</div>
+                <div class="title">バックアップ一覧</div>
+                <div class="subtitle">端末設定</div>
+            </div>
+            <div class="menu-card card-navy">
+                <div class="icon">⇅</div>
+                <div class="title">全送信</div>
+                <div class="subtitle">オフライン</div>
+            </div>
+            <div class="menu-card card-cyan" onclick="openSavedModal()" style="cursor:pointer;">
+                <div class="icon">📂</div>
+                <div class="title">保存済みフォルダ</div>
+                <div class="subtitle">オフライン</div>
+            </div>
+            <div class="menu-card card-dark" onclick="openTrashModal()" style="cursor:pointer;">
+                <div class="icon">🗑️</div>
+                <div class="title">ゴミ箱</div>
+                <div class="subtitle">削除したファイル</div>
+            </div>
+        </div>
+
+        <div class="recent-files-panel">
+            <div class="recent-files-title">最近のファイル</div>
+            <div class="recent-file-item" onclick="navigateToReport()">
+                <div class="file-info">
+                    <div class="excel-icon">X</div>
+                    <div class="file-names">
+                        <span class="file-id">R260616_174428-01</span>
+                        <span class="file-title">電子化用_作業終了報告書.xlsx</span>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div class="file-date">2026/09/17<br>09:57</div>
+                    <div class="btn-arrow">›</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- モーダル（一時保存一覧） -->
+<div class="modal-overlay" id="draftModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <span>📝 一時保存の実績一覧</span>
+            <button class="modal-close-btn" onclick="closeDraftModal()">✕</button>
+        </div>
+        <div class="modal-body" id="draftListContainer"></div>
+    </div>
+</div>
+
+<!-- モーダル（保存済みフォルダ） -->
+<div class="modal-overlay" id="savedModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <span>📂 保存済みフォルダ</span>
+            <button class="modal-close-btn" type="button" onclick="closeSavedModal()">✕</button>
+        </div>
+        <div class="modal-body" id="savedListContainer"></div>
+    </div>
+</div>
+
+<!-- ゴミ箱モーダル -->
+<div class="modal-overlay" id="trashModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <span>🗑️ ゴミ箱</span>
+            <button class="modal-close-btn" onclick="closeTrashModal()">✕</button>
+        </div>
+        <div class="modal-body" id="trashListContainer"></div>
+    </div>
+</div>
+
+<!-- 報告書入力フォーム -->
+<div id="reportView" class="page-view">
+    <div class="main-card">
+        <div class="app-header">
+            <div class="title">‹ 作業終了報告書.xlsx</div>
+            <div class="header-btn-group">
+                <button class="btn-home" onclick="navigateToHome()">‹ ホーム</button>
+                <button class="btn-save" type="button" onclick="saveDraft()">一時保存</button>
+                <button id="registerBtn" type="button" onclick="registerSavedReport()" style="background:#16a34a;color:#fff;font-weight:bold;min-width:90px;transition:0.2s;">登録</button>
+                <button type="button" onclick="printReport()">PDF保存</button>
+            </div>
+        </div>
+
+        <div style="padding: 12px 15px;">
+            <div class="company-header">
+                <h1 class="report-title">作業終了報告書</h1>
+            </div>
+
+            <form id="reportForm">
+                <div class="section-header">基本情報</div>
+                <table class="form-table">
+                    <tr>
+                        <td class="label-bg">工事担当者</td>
+                        <td class="input-cell">
+                            <select id="staff">
+                                <option value="">選択</option>
+                                <option value="宮島 竜仙">宮島 竜仙</option>
+                                <option value="中山 勝">中山 勝</option>
+                                <option value="熊木 隆司">熊木 隆司</option>
+                                <option value="河西 泉">河西 泉</option>
+                                <option value="古田 忠男">古田 忠男</option>
+                                <option value="野村 清志郎">野村 清志郎</option>
+                                <option value="早瀬 臣次">早瀬 臣次</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="label-bg">納入先名</td>
+                        <td class="input-cell"><input type="text" id="client" placeholder="納入先名を入力"></td>
+                    </tr>
+                    <tr>
+                        <td class="label-bg">受注No.</td>
+                        <td class="input-cell"><input type="text" id="orderNo"></td>
+                    </tr>
+                    <tr>
+                        <td class="label-bg">S/N</td>
+                        <td class="input-cell"><input type="text" id="sn"></td>
+                    </tr>
+                </table>
+
+                <table class="form-table">
+                    <tr>
+                        <td class="label-bg" style="width:28%;">工事日</td>
+                        <td class="input-cell" style="width:36%;">
+                            <div style="display:flex; align-items:center; gap:2px;">
+                                <span style="font-size:10px;">開始</span>
+                                <input type="date" id="startDate" value="2026-09-16">
+                            </div>
+                        </td>
+                        <td class="input-cell" style="width:36%;">
+                            <div style="display:flex; align-items:center; gap:2px;">
+                                <span style="font-size:10px;">終了</span>
+                                <input type="date" id="endDate" value="2026-09-16">
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+
+                <div class="section-header">作業種類（タップで 〇 → × → ー 切り替え）</div>
+                <div class="checkbox-grid">
+                    <div class="tri-state-btn" data-type="点検" onclick="cycleState(this)"><span>点検</span><span class="mark"></span></div>
+                    <div class="tri-state-btn" data-type="改造" onclick="cycleState(this)" data-state="maru"><span>改造</span><span class="mark">〇</span></div>
+                    <div class="tri-state-btn" data-type="部品交換・修理" onclick="cycleState(this)"><span>部品交換・修理</span><span class="mark"></span></div>
+                    <div class="tri-state-btn" data-type="移設" onclick="cycleState(this)"><span>移設</span><span class="mark"></span></div>
+                    <div class="tri-state-btn" data-type="その他" onclick="cycleState(this)"><span>その他</span><span class="mark"></span></div>
+                </div>
+
+                <div class="section-header">本工事に至る経緯</div>
+                <table class="form-table">
+                    <tr>
+                        <td class="label-bg">いつから</td>
+                        <td class="input-cell">
+                            <select id="timeframe">
+                                <option value="">選択してください</option>
+                                <option value="一週間以内">一週間以内</option>
+                                <option value="１カ月以内">１カ月以内</option>
+                                <option value="半年以内">半年以内</option>
+                                <option value="１年以内">１年以内</option>
+                                <option value="１年以上">１年以上</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="label-bg">どの部分で</td>
+                        <td class="input-cell">
+                            <select id="categorySelect">
+                                <option value="">選択してください</option>
+                                <option value="駆動関係">駆動関係</option>
+                                <option value="ベルト搬送">ベルト搬送</option>
+                                <option value="ローラ搬送">ローラ搬送</option>
+                                <option value="チェーン搬送">チェーン搬送</option>
+                                <option value="エアー関係">エアー関係</option>
+                                <option value="電気関係">電気関係</option>
+                                <option value="安全">安全</option>
+                                <option value="外観">外観</option>
+                                <option value="その他">その他</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="label-bg">何が</td>
+                        <td class="input-cell">
+                            <select id="componentSelect"><option value="">先に「どの部分で」を選択</option></select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="label-bg">詳細状況</td>
+                        <td class="input-cell"><textarea id="reasonDetail" placeholder="詳細状況を入力してください"></textarea></td>
+                    </tr>
+                </table>
+
+                <div class="section-header">設備内容・機種</div>
+                <table class="form-table">
+                    <tr>
+                        <td class="label-bg">シリーズ</td>
+                        <td class="input-cell">
+                            <select id="seriesSelect">
+                                <option value="">シリーズを選択</option>
+                                <option value="複数機種">複数機種</option>
+                                <option value="ミニシリーズ">ミニシリーズ</option>
+                                <option value="マルチシリーズ">マルチシリーズ</option>
+                                <option value="フード ベヤ">フード ベヤ</option>
+                                <option value="レスベヤ">レスベヤ</option>
+                                <option value="N1シリーズ">N1シリーズ</option>
+                                <option value="システム セイヒン">システム セイヒン</option>
+                                <option value="ヒョウジュン ライン">ヒョウジュン ライン</option>
+                                <option value="その他・旧機種">その他・旧機種</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="label-bg">機種</td>
+                        <td class="input-cell">
+                            <select id="modelSelect"><option value="">機種を選択</option></select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="label-bg">型式</td>
+                        <td class="input-cell"><input type="text" id="modelType" placeholder="型式を入力"></td>
+                    </tr>
+                </table>
+
+                <div class="section-header">作業内容（自由記述）</div>
+                <div>
+                    <textarea id="workDetails" class="work-details-textarea" placeholder="実施した作業の詳細内容を記入してください"></textarea>
+                </div>
+
+                <div class="section-header">■ 確認サイン</div>
+                <div class="sign-field-container">
+                    <div class="sign-preview-box">
+                        <canvas id="main-preview-canvas"></canvas>
+                    </div>
+                    <div class="sign-bottom-bar">
+                        <button type="button" class="btn-retro" onclick="openEditorModal()">編 集</button>
+                        <button type="button" class="btn-retro" onclick="clearSignature()">削 除</button>
+                        <button type="button" id="signRegisterBtn" class="btn-retro" onclick="registerSavedReport()" style="background:#16a34a;color:#fff;font-weight:bold;">登 録</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; padding: 12px 15px; background: #ffe0b2; border-top: 1px solid var(--border-orange); margin-top: 20px; font-size: 11px; font-weight: 600; color: var(--dark-brown);">
+            <div>ステータス: 入力中</div>
+            <div>報告日： 2026年9月16日</div>
+        </div>
+    </div>
+</div>
+
+<!-- モーダル・サインエディタ -->
+<div class="editor-modal" id="editorModal">
+    <div class="editor-toolbar">
+        <div class="tool-group">
+            <button type="button" class="tool-btn active">
+                <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"></path></svg>
+                描画
+            </button>
+            <button type="button" class="tool-btn" onclick="undoCanvas()">
+                <svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-1.03C19.98 11.23 16.54 8 12.5 8z"></path></svg>
+                戻す
+            </button>
+            <button type="button" class="tool-btn" onclick="togglePalettePanel()">
+                <svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61.43.53 1.03.89 1.7.89h1.83c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-1 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8z"></path></svg>
+                設定
+            </button>
+        </div>
+        <button type="button" class="btn-finish-edit" style="margin:0;" onclick="saveAndCloseModal()">完了</button>
+    </div>
+
+    <div class="editor-workspace" id="editorWorkspace">
+        <div class="editor-canvas-container" id="canvasContainer">
+            <canvas id="modal-canvas"></canvas>
+            <div class="palette-popup-panel" id="palettePanel">
+                <div class="palette-panel-title">ペン設定</div>
+                <div style="margin-bottom:8px;">
+                    <div class="color-picker-grid">
+                        <div class="color-circle active" style="background-color: #000000;" onclick="selectColor('#000000', this)"></div>
+                        <div class="color-circle" style="background-color: #0000ff;" onclick="selectColor('#0000ff', this)"></div>
+                        <div class="color-circle" style="background-color: #ff0000;" onclick="selectColor('#ff0000', this)"></div>
+                    </div>
+                </div>
+                <div>
+                    <label style="font-size:10px;">太さ: <span id="penWidthValue">6px</span></label>
+                    <input type="range" id="penWidthSlider" min="2" max="16" value="6" oninput="changePenWidth(this.value)" style="width:100%;">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function navigateToReport() {
+    document.getElementById('homeView').classList.remove('active');
+    document.getElementById('reportView').classList.add('active');
+    setupPreviewCanvas();
+    window.scrollTo(0, 0);
+}
+
+function navigateToHome() {
+    document.getElementById('reportView').classList.remove('active');
+    document.getElementById('homeView').classList.add('active');
+    window.scrollTo(0, 0);
+}
+
+function cycleState(btn) {
+    const currentState = btn.getAttribute('data-state');
+    const markSpan = btn.querySelector('.mark');
+
+    if (!currentState) {
+        btn.setAttribute('data-state', 'maru');
+        markSpan.innerText = '〇';
+    } else if (currentState === 'maru') {
+        btn.setAttribute('data-state', 'batsu');
+        markSpan.innerText = '×';
+    } else if (currentState === 'batsu') {
+        btn.setAttribute('data-state', 'dash');
+        markSpan.innerText = 'ー';
+    } else {
+        btn.removeAttribute('data-state');
+        markSpan.innerText = '';
+    }
+}
+
+const componentData = {
+    "駆動関係": ["モーター", "チェーン", "スプロケット", "タイミングプーリ", "タイミングベルト", "モータローラ", "ベアリングユニット"],
+    "ベルト搬送": ["ベルト", "ドライブプーリ", "スナップローラ", "ピンチローラとスプリング", "テール・キャリア・リターンローラ", "マグネットベルトユニット"],
+    "ローラ搬送": ["搬送ローラ", "ローラベアリング", "カウンタシャフト", "チェンジユニット", "丸ベルト", "ミニプーリ・カラー", "ナイロンチェーンカップリング", "ユニバーサルジョイント", "トルクアジャスター", "ローラスプロケット", "駆動伝動ベルト"],
+    "チェーン搬送": ["搬送チェーン", "チェーンレール", "スプロケット"],
+    "エアー関係": ["シリンダー", "ソレノイドバルブ", "継手・エアホース", "オートSW"],
+    "電気関係": ["センサー"],
+    "安全": ["安全カバー・保護カバー"],
+    "外観": ["フレーム破損・変形状態"],
+    "その他": ["設備全体 オーバーホール"]
+};
+
+function updateComponentOptions(selected, targetVal = '') {
+    const componentSelect = document.getElementById('componentSelect');
+    componentSelect.innerHTML = '';
+
+    if (selected && componentData[selected]) {
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.innerText = '選択してください';
+        componentSelect.appendChild(defaultOpt);
+
+        componentData[selected].forEach(item => {
+            const opt = document.createElement('option');
+            opt.value = item;
+            opt.innerText = item;
+            if (item === targetVal) opt.selected = true;
+            componentSelect.appendChild(opt);
+        });
+    } else {
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.innerText = '先に「どの部分で」を選択';
+        componentSelect.appendChild(defaultOpt);
+    }
+}
+
+document.getElementById('categorySelect').addEventListener('change', function() {
+    updateComponentOptions(this.value);
+});
+
+const seriesData = {
+    "ミニシリーズ": ["MMX2", "MMX224", "MMX300", "GBC", "MMX200", "MBC2H", "MMBC3", "MB2S", "MBC3", "MFB", "MRA1", "MMX2K"],
+    "マルチシリーズ": ["MCD", "MR/JR/MRT/JRT", "NC", "MCC3/4", "VD", "MS-57", "MCC1/2", "MSA"],
+    "フード ベヤ": ["FB2C", "TBC200", "GFBC", "FB20", "TBC", "FB23", "FSD"],
+    "レスベヤ": ["GM18H", "G22H", "GS18H", "SGA", "GM18-MD", "G13"],
+    "N1シリーズ": ["SL", "SBH3", "SBH2", "SLS-H", "SLS", "SB2"],
+    "システム セイヒン": ["システム セイヒン"],
+    "ヒョウジュン ライン": ["ヒョウジュン ライン"],
+    "複数機種": [],
+    "その他・旧機種": ["トレーター", "MC", "MT", "PT", "MV", "その他"]
+};
+
+function updateModelOptions(selected, targetVal = '') {
+    const modelSelect = document.getElementById('modelSelect');
+    modelSelect.innerHTML = '<option value="">機種を選択</option>';
+    if (seriesData[selected] && seriesData[selected].length > 0) {
+        seriesData[selected].forEach(item => {
+            const opt = document.createElement('option');
+            opt.value = item;
+            opt.innerText = item;
+            if (item === targetVal) opt.selected = true;
+            modelSelect.appendChild(opt);
+        });
+    }
+}
+
+document.getElementById('seriesSelect').addEventListener('change', function() {
+    updateModelOptions(this.value);
+});
+
+/* ==========================================
+   高解像度・スムーズキャンバス制御
+   ========================================== */
+const previewCanvas = document.getElementById('main-preview-canvas');
+const previewCtx = previewCanvas.getContext('2d');
+const modalCanvas = document.getElementById('modal-canvas');
+const modalCtx = modalCanvas.getContext('2d');
+const editorModal = document.getElementById('editorModal');
+
+let isDrawing = false;
+let historyStack = [];
+let currentColor = "#000000";
+let currentLineWidth = 6;
+let points = []; // ベジェ補間用座標格納配列
+
+// プレビューキャンバスの高解像度化
+function setupPreviewCanvas() {
+    const rect = previewCanvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const w = rect.width || 400;
+    const h = rect.height || 70;
+
+    previewCanvas.width = w * dpr;
+    previewCanvas.height = h * dpr;
+    previewCtx.scale(dpr, dpr);
+}
+
+function openEditorModal() {
+    editorModal.style.display = 'flex';
+    setCanvasToScreenFit();
+}
+
+function togglePalettePanel() {
+    document.getElementById('palettePanel').classList.toggle('show');
+}
+
+function selectColor(color, element) {
+    currentColor = color;
+    document.querySelectorAll('.color-circle').forEach(el => el.classList.remove('active'));
+    element.classList.add('active');
+}
+
+function changePenWidth(val) {
+    currentLineWidth = parseInt(val, 10);
+    document.getElementById('penWidthValue').innerText = val + 'px';
+}
+
+function setCanvasToScreenFit() {
+    const workspace = document.getElementById('editorWorkspace');
+    const cssW = Math.max(280, workspace.clientWidth - 20);
+    const cssH = Math.max(200, workspace.clientHeight - 20);
+    const dpr = window.devicePixelRatio || 1;
+
+    // 内部解像度をDevicePixelRatio倍に拡大してクリア
+    modalCanvas.width = cssW * dpr;
+    modalCanvas.height = cssH * dpr;
+    
+    document.getElementById('canvasContainer').style.width = cssW + 'px';
+    document.getElementById('canvasContainer').style.height = cssH + 'px';
+
+    modalCtx.resetTransform();
+    modalCtx.scale(dpr, dpr);
+
+    modalCtx.fillStyle = "#ffffff";
+    modalCtx.fillRect(0, 0, cssW, cssH);
+    
+    historyStack = [];
+    saveState();
+}
+
+function getPos(e) {
+    const rect = modalCanvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: clientX - rect.left, y: clientY - rect.top };
+}
+
+function startDrawing(e) {
+    isDrawing = true;
+    points = [getPos(e)];
+}
+
+function draw(e) {
+    if (!isDrawing) return;
+    if (e.cancelable) e.preventDefault();
+    
+    points.push(getPos(e));
+
+    if (points.length < 3) {
+        const b = points[0];
+        modalCtx.beginPath();
+        modalCtx.arc(b.x, b.y, currentLineWidth / 2, 0, Math.PI * 2, !0);
+        modalCtx.fillStyle = currentColor;
+        modalCtx.fill();
+        return;
+    }
+
+    modalCtx.beginPath();
+    modalCtx.moveTo(points[0].x, points[0].y);
+
+    // 中点を使ったベジェ曲線で滑らかに繋ぐ
+    for (var i = 1; i < points.length - 2; i++) {
+        var c = (points[i].x + points[i + 1].x) / 2;
+        var d = (points[i].y + points[i + 1].y) / 2;
+        modalCtx.quadraticCurveTo(points[i].x, points[i].y, c, d);
+    }
+
+    modalCtx.quadraticCurveTo(
+        points[i].x,
+        points[i].y,
+        points[i + 1].x,
+        points[i + 1].y
+    );
+
+    modalCtx.strokeStyle = currentColor;
+    modalCtx.lineWidth = currentLineWidth;
+    modalCtx.lineCap = "round";
+    modalCtx.lineJoin = "round";
+    modalCtx.stroke();
+}
+
+function stopDrawing() {
+    if (isDrawing) {
+        isDrawing = false;
+        points = [];
+        saveState();
+    }
+}
+
+modalCanvas.addEventListener('pointerdown', startDrawing);
+modalCanvas.addEventListener('pointermove', draw);
+modalCanvas.addEventListener('pointerup', stopDrawing);
+modalCanvas.addEventListener('pointercancel', stopDrawing);
+modalCanvas.addEventListener('pointerleave', stopDrawing);
+modalCanvas.addEventListener('mousedown', startDrawing);
+modalCanvas.addEventListener('mousemove', draw);
+modalCanvas.addEventListener('mouseup', stopDrawing);
+modalCanvas.addEventListener('mouseleave', stopDrawing);
+modalCanvas.addEventListener('touchstart', startDrawing, { passive: false });
+modalCanvas.addEventListener('touchmove', draw, { passive: false });
+modalCanvas.addEventListener('touchend', stopDrawing);
+
+function saveState() {
+    if (historyStack.length >= 10) historyStack.shift();
+    historyStack.push(modalCtx.getImageData(0, 0, modalCanvas.width, modalCanvas.height));
+}
+
+function undoCanvas() {
+    if (historyStack.length > 1) {
+        historyStack.pop();
+        modalCtx.putImageData(historyStack[historyStack.length - 1], 0, 0);
+    }
+}
+
+function saveAndCloseModal() {
+    const cssW = previewCanvas.getBoundingClientRect().width || 400;
+    const cssH = previewCanvas.getBoundingClientRect().height || 70;
+
+    previewCtx.clearRect(0, 0, cssW, cssH);
+    previewCtx.drawImage(
+        modalCanvas,
+        0, 0, modalCanvas.width, modalCanvas.height,
+        0, 0, cssW, cssH
+    );
+    document.getElementById('palettePanel').classList.remove('show');
+    editorModal.style.display = 'none';
+}
+
+function clearSignature() {
+    const cssW = previewCanvas.getBoundingClientRect().width || 400;
+    const cssH = previewCanvas.getBoundingClientRect().height || 70;
+    
+    previewCtx.clearRect(0, 0, cssW, cssH);
+
+    const dpr = window.devicePixelRatio || 1;
+    modalCtx.save();
+    modalCtx.setTransform(1, 0, 0, 1, 0, 0);
+    modalCtx.fillStyle = "#ffffff";
+    modalCtx.fillRect(0, 0, modalCanvas.width, modalCanvas.height);
+    modalCtx.restore();
+
+    historyStack = [];
+    saveState();
+}
+
+
+/* 保存済みフォルダ機能 */
+const SAVED_STORAGE_KEY = 'work_report_saved_list';
+
+function getSavedReports() {
+    try {
+        const data = localStorage.getItem(SAVED_STORAGE_KEY);
+        if (!data) return [];
+        const parsed = JSON.parse(data);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+        console.error('保存済みデータの読み込みに失敗:', e);
+        return [];
+    }
+}
+
+function collectReportData() {
+    const form = document.getElementById('reportForm');
+    const data = {};
+    if (!form) throw new Error('reportForm が見つかりません。');
+    form.querySelectorAll('input, select, textarea').forEach(el => {
+        if (el.id) data[el.id] = el.value;
+    });
+    // Canvasで書いた確認サインも画像データとして保存
+    try {
+        data.signature = previewCanvas.toDataURL('image/png');
+    } catch (e) {
+        data.signature = '';
+    }
+    data.workTypes = {};
+    document.querySelectorAll('.tri-state-btn[data-type]').forEach(el => {
+        data.workTypes[el.dataset.type] = el.dataset.state || '';
+    });
+    return data;
+}
+
+function registerSavedReport() {
+    try {
+        const data = collectReportData();
+        const staff = data.staff || '未設定';
+        const client = data.client || '未設定';
+        const reports = getSavedReports();
+        reports.unshift({
+            id: 'saved_' + Date.now(),
+            savedAt: new Date().toLocaleString('ja-JP'),
+            staff: staff,
+            client: client,
+            orderNo: data.orderNo || '',
+            data: data
+        });
+        localStorage.setItem(SAVED_STORAGE_KEY, JSON.stringify(reports));
+
+        // 登録したことが画面上ではっきり分かるようにする
+        const buttons = [
+            document.getElementById('registerBtn'),
+            document.getElementById('signRegisterBtn')
+        ].filter(Boolean);
+        buttons.forEach(btn => {
+            btn.textContent = '✓ 登録済み';
+            btn.classList.add('register-success');
+            setTimeout(() => {
+                btn.textContent = btn.id === 'signRegisterBtn' ? '登 録' : '登録';
+                btn.classList.remove('register-success');
+            }, 2000);
+        });
+        const toast = document.getElementById('registerToast');
+        if (toast) {
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2200);
+        }
+        renderSavedList();
+    } catch (e) {
+        console.error(e);
+        alert('登録できませんでした。\n' + (e.message || e));
+    }
+}
+
+function openSavedModal() {
+    renderSavedList();
+    document.getElementById('savedModal').style.display = 'flex';
+}
+
+function closeSavedModal() {
+    document.getElementById('savedModal').style.display = 'none';
+}
+
+function renderSavedList() {
+    const container = document.getElementById('savedListContainer');
+    const reports = getSavedReports();
+    container.innerHTML = '';
+    if (reports.length === 0) {
+        container.innerHTML = '<div style="text-align:center;color:#888;padding:25px 0;">保存済みデータはありません。</div>';
+        return;
+    }
+    reports.forEach(report => {
+        const item = document.createElement('div');
+        item.className = 'draft-item';
+        item.innerHTML = `
+            <div class="draft-info-main">
+                <div class="draft-client">納入先: ${escapeHtml(report.client)}</div>
+                <div class="draft-staff">担当: ${escapeHtml(report.staff)}</div>
+                <div class="draft-date">${escapeHtml(report.savedAt)}</div>
+            </div>
+            <div class="draft-actions">
+                <button class="btn-draft-load" type="button" onclick="loadSavedReport('${report.id}')">開く</button>
+                <button class="btn-draft-delete" type="button" onclick="deleteSavedReport('${report.id}', event)">削除</button>
+            </div>`;
+        container.appendChild(item);
+    });
+}
+
+function registerSavedReportFromList(id, event) {
+    if (event) event.stopPropagation();
+    const report = getSavedReports().find(x => x.id === id);
+    if (!report || !report.data) return;
+
+    // 一覧から選んだ保存データを現在の報告書へ反映して、登録処理を実行
+    applyReportData(report.data);
+    registerSavedReport();
+}
+
+function loadSavedReport(id) {
+    const report = getSavedReports().find(x => x.id === id);
+    if (!report || !report.data) return;
+    applyReportData(report.data);
+    closeSavedModal();
+    navigateToReport();
+    alert('保存済みデータを開きました。');
+}
+
+function applyReportData(data) {
+    Object.keys(data || {}).forEach(id => {
+        if (id === 'workTypes') return;
+        const el = document.getElementById(id);
+        if (el) el.value = data[id] ?? '';
+    });
+    // 保存していた確認サインを復元
+    if (data.signature) {
+        const img = new Image();
+        img.onload = function() {
+            const rect = previewCanvas.getBoundingClientRect();
+            const cssW = rect.width || 400;
+            const cssH = rect.height || 70;
+            previewCtx.clearRect(0, 0, cssW, cssH);
+            previewCtx.drawImage(img, 0, 0, cssW, cssH);
+            // エディタ側にも復元して、再編集できるようにする
+            const dpr = window.devicePixelRatio || 1;
+            modalCtx.save();
+            modalCtx.setTransform(1, 0, 0, 1, 0, 0);
+            modalCtx.fillStyle = '#ffffff';
+            modalCtx.fillRect(0, 0, modalCanvas.width, modalCanvas.height);
+            modalCtx.restore();
+            modalCtx.drawImage(img, 0, 0, modalCanvas.width, modalCanvas.height);
+            historyStack = [];
+            saveState();
+        };
+        img.src = data.signature;
+    } else {
+        clearSignature();
+    }
+    if (data.workTypes) {
+        document.querySelectorAll('.tri-state-btn[data-type]').forEach(el => {
+            const state = data.workTypes[el.dataset.type] || '';
+            el.dataset.state = state;
+            const mark = el.querySelector('.mark');
+            if (mark) mark.textContent = state === 'maru' ? '〇' : state === 'batsu' ? '×' : state === 'dash' ? 'ー' : '';
+        });
+    }
+}
+
+const TRASH_STORAGE_KEY = 'work_report_trash_list';
+
+function getTrashItems() {
+    try {
+        const data = localStorage.getItem(TRASH_STORAGE_KEY);
+        return data ? JSON.parse(data) : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function moveToTrash(item, type) {
+    const trash = getTrashItems();
+    trash.unshift({
+        id: 'trash_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+        deletedAt: new Date().toLocaleString(),
+        type: type,
+        original: item
+    });
+    localStorage.setItem(TRASH_STORAGE_KEY, JSON.stringify(trash));
+}
+
+function deleteSavedReport(id, event) {
+    if (event) event.stopPropagation();
+    if (!confirm('この保存済みデータをゴミ箱へ移動しますか？')) return;
+    const reports = getSavedReports();
+    const target = reports.find(x => x.id === id);
+    if (!target) return;
+    moveToTrash(target, '保存済み');
+    localStorage.setItem(SAVED_STORAGE_KEY, JSON.stringify(reports.filter(x => x.id !== id)));
+    renderSavedList();
+    alert('ゴミ箱へ移動しました。');
+}
+
+function openTrashModal() {
+    renderTrashList();
+    document.getElementById('trashModal').style.display = 'flex';
+}
+
+function closeTrashModal() {
+    document.getElementById('trashModal').style.display = 'none';
+}
+
+function renderTrashList() {
+    const container = document.getElementById('trashListContainer');
+    const trash = getTrashItems();
+    container.innerHTML = '';
+    if (trash.length === 0) {
+        container.innerHTML = '<div style="text-align:center;color:#888;padding:25px 0;">ゴミ箱は空です。</div>';
+        return;
+    }
+    trash.forEach(item => {
+        const original = item.original || {};
+        const data = original.data || {};
+        const client = original.client || data.client || '未設定';
+        const staff = original.staff || data.staff || '未設定';
+        const row = document.createElement('div');
+        row.className = 'draft-item';
+        row.innerHTML = `
+            <div class="draft-info-main">
+                <div class="draft-client">${escapeHtml(client)}</div>
+                <div class="draft-staff">担当: ${escapeHtml(staff)} / ${escapeHtml(item.type)}</div>
+                <div class="draft-date">削除日時: ${escapeHtml(item.deletedAt)}</div>
+            </div>
+            <div class="draft-actions">
+                <button class="btn-draft-load" type="button" onclick="restoreTrashItem('${item.id}', event)">復元</button>
+                <button class="btn-draft-delete" type="button" onclick="deleteTrashItem('${item.id}', event)">完全削除</button>
+            </div>`;
+        container.appendChild(row);
+    });
+}
+
+function restoreTrashItem(id, event) {
+    if (event) event.stopPropagation();
+    const trash = getTrashItems();
+    const item = trash.find(x => x.id === id);
+    if (!item || !item.original) return;
+    if (!confirm('このデータを元の場所へ復元しますか？')) return;
+    if (item.type === '保存済み') {
+        const reports = getSavedReports();
+        reports.unshift(item.original);
+        localStorage.setItem(SAVED_STORAGE_KEY, JSON.stringify(reports));
+    } else if (item.type === '一時保存') {
+        const drafts = getDrafts();
+        drafts.unshift(item.original);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(drafts));
+    }
+    localStorage.setItem(TRASH_STORAGE_KEY, JSON.stringify(trash.filter(x => x.id !== id)));
+    renderTrashList();
+    alert('復元しました。');
+}
+
+function deleteTrashItem(id, event) {
+    if (event) event.stopPropagation();
+    if (!confirm('このデータを完全に削除しますか？\n完全に削除すると元に戻せません。')) return;
+    const trash = getTrashItems().filter(x => x.id !== id);
+    localStorage.setItem(TRASH_STORAGE_KEY, JSON.stringify(trash));
+    renderTrashList();
+}
+
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+/* 一時保存機能 */
+const STORAGE_KEY = 'work_report_draft_list';
+
+function getDrafts() {
+    const data = localStorage.getItem(STORAGE_KEY);
+    return data ? JSON.parse(data) : [];
+}
+
+function saveDraft() {
+    const staffName = document.getElementById('staff').value || '未設定';
+    const clientName = document.getElementById('client').value || '未設定';
+
+    const drafts = getDrafts();
+    drafts.unshift({
+        id: 'draft_' + Date.now(),
+        savedAt: new Date().toLocaleString(),
+        staff: staffName,
+        client: clientName
+    });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(drafts));
+    alert(`一時保存しました。`);
+}
+
+function openDraftModal() {
+    renderDraftList();
+    document.getElementById('draftModal').style.display = 'flex';
+}
+
+function closeDraftModal() {
+    document.getElementById('draftModal').style.display = 'none';
+}
+
+function renderDraftList() {
+    const container = document.getElementById('draftListContainer');
+    container.innerHTML = '';
+    const drafts = getDrafts();
+
+    if (drafts.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: #888; padding: 20px 0;">一時保存データはありません。</div>';
+        return;
+    }
+
+    drafts.forEach(draft => {
+        const item = document.createElement('div');
+        item.className = 'draft-item';
+        item.innerHTML = `
+            <div class="draft-info-main">
+                <div class="draft-client">納入先: ${draft.client}</div>
+                <div class="draft-staff">担当: ${draft.staff}</div>
+                <div class="draft-date">${draft.savedAt}</div>
+            </div>
+            <div class="draft-actions">
+                <button class="btn-draft-load" onclick="closeDraftModal(); navigateToReport();">開く</button>
+                <button class="btn-draft-delete" onclick="deleteDraftItem('${draft.id}', event)">削除</button>
+            </div>
+        `;
+        container.appendChild(item);
+    });
+}
+
+function deleteDraftItem(id, event) {
+    if (event) event.stopPropagation();
+    if (!confirm('この一時保存データをゴミ箱へ移動しますか？')) return;
+    const drafts = getDrafts();
+    const target = drafts.find(d => d.id === id);
+    if (!target) return;
+    moveToTrash(target, '一時保存');
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(drafts.filter(d => d.id !== id)));
+    renderDraftList();
+    alert('ゴミ箱へ移動しました。');
+}
+
+function printReport() {
+    window.print();
+}
+
+window.addEventListener('resize', () => {
+    if (document.getElementById('reportView').classList.contains('active')) {
+        setupPreviewCanvas();
+    }
+});
+</script>
+</body>
+</html>
